@@ -12,12 +12,13 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.Condition;
 import javax.swing.JFrame;
+import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 
 public class ServidorScrabbleJ extends JFrame{
 
-	   private String[] tablero = new String[9]; // tablero de scrabble
+	   private String[] tablero = new String[225]; // tablero de scrabble
 	   private JTextArea areaSalida; // para imprimir los movimientos en pantalla
 	   private Jugador[] jugadores; // arreglo de objetos Jugador
 	   private ServerSocket servidor; // socket servidor para conectarse con los clientes
@@ -45,7 +46,7 @@ public class ServidorScrabbleJ extends JFrame{
 	      // variable de condición para el turno del otro jugador
 	      turnoOtroJugador = bloqueoJuego.newCondition();      
 
-	      for ( int i = 0; i < 9; i++ )
+	      for ( int i = 0; i < 225; i++ )
 	         tablero[ i ] = new String( "" ); // crea tablero de scrabble
 	      jugadores = new Jugador[2]; // crea arreglo de jugadores
 	      jugadorActual = JUGADOR_1; // establece el primer jugador como el jugador actual
@@ -61,10 +62,10 @@ public class ServidorScrabbleJ extends JFrame{
 	      } // fin de catch
 
 	      areaSalida = new JTextArea(); // crea objeto JTextArea para mostrar la salida
-	      add( areaSalida, BorderLayout.CENTER );
+	      add( new JScrollPane(areaSalida), BorderLayout.CENTER );
 	      areaSalida.setText( "Servidor esperando conexiones\n" );
 
-	      setSize( 300, 300 ); // establece el tamaño de la ventana
+	      setSize( 300, 325 ); // establece el tamaño de la ventana
 	      setVisible( true ); // muestra la ventana
 	   } // fin del constructor de ServidorScrabbleJ
 

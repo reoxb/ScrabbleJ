@@ -47,9 +47,10 @@ public class ClienteScrabbleJ extends JFrame implements Runnable {
 	      add( new JScrollPane( areaPantalla ), BorderLayout.SOUTH );
 
 	      panelTablero = new JPanel(); // establece panel para los cuadros en el tablero
-	      panelTablero.setLayout( new GridLayout( 3, 3, 0, 0 ) );
-
-	      tablero = new Cuadro[ 3 ][ 3 ]; // crea el tablero
+	      panelTablero.setLayout( new GridLayout( 15, 15, 0, 0 ) );
+	      
+	      //filas[]columnas[]
+	      tablero = new Cuadro[ 15 ][ 15 ]; // crea el tablero
 
 	      // itera a través de las filas en el tablero
 	      for ( int fila = 0; fila < tablero.length; fila++ ) 
@@ -58,7 +59,9 @@ public class ClienteScrabbleJ extends JFrame implements Runnable {
 	         for ( int columna = 0; columna < tablero[ fila ].length; columna++ ) 
 	         {
 	            // crea un cuadro
-	            tablero[ fila ][ columna ] = new Cuadro( " ", fila * 3 + columna );
+	        	//<-- Crear un aleatorio para marcar el tablero Cuadro("-" , #)
+	        	//<-- Cambiar 3 por 15 para determinar la posicion de los cuadros
+	            tablero[ fila ][ columna ] = new Cuadro( " ", fila * 15 + columna );
 	            panelTablero.add( tablero[ fila ][ columna ] ); // agrega el cuadro       
 	         } // fin de for interior
 	      } // fin de for exterior
@@ -70,8 +73,9 @@ public class ClienteScrabbleJ extends JFrame implements Runnable {
 	      panel2 = new JPanel(); // establece el panel que contiene a panelTablero
 	      panel2.add( panelTablero, BorderLayout.CENTER ); // agrega el panel del tablero
 	      add( panel2, BorderLayout.CENTER ); // agrega el panel contenedor
+	     
 
-	      setSize( 325, 225 ); // establece el tamaño de la ventana
+	      setSize( 475, 625 ); // establece el tamaño de la ventana
 	      setVisible( true ); // muestra la ventana
 
 	      iniciarCliente();
@@ -144,8 +148,8 @@ public class ClienteScrabbleJ extends JFrame implements Runnable {
 	      {
 	         int ubicacion = entrada.nextInt(); // obtiene la ubicación del movimiento
 	         entrada.nextLine(); // salta nueva línea después de la ubicación int
-	         int fila = ubicacion / 3; // calcula la fila
-	         int columna = ubicacion % 3; // calcula la columna
+	         int fila = ubicacion / 15; // calcula la fila
+	         int columna = ubicacion % 15; // calcula la columna
 
 	         establecerMarca(  tablero[ fila ][ columna ], 
 	            ( miMarca.equals( MARCA_X ) ? MARCA_O : MARCA_X ) ); // marca el movimiento                
@@ -261,4 +265,4 @@ public class ClienteScrabbleJ extends JFrame implements Runnable {
 	         g.drawString( marca, 11, 20 ); // dibuja la marca   
 	      } // fin del método paintComponent
 	   } // fin de la clase interna Cuadro
-}
+}//fin de la clase

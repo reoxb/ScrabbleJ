@@ -53,7 +53,7 @@ public class ScrabbleJ {
     	consonantes = new char[]{'B', 'C', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'Ñ', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Y', 'Z' };
     	vocales = new char[]{'A', 'E', 'I', 'O', 'U'};
         int num_constantes = 7;
-        int num_vocales = 3;
+        int num_vocales = 4;
         
         /*generamos los caracteres aleatorios
          * nextInt(int n)  Devuelve un pseudoaleatorio de tipo int comprendido entre cero (incluido)

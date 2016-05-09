@@ -33,6 +33,7 @@ public class Diccionario{
 			return listaDePalabras;
 		}//fin del metodo
 		
+		//crea un arreglo de palabras que coinciden con el string generado
 		public String[] filtrarDiccionario(String s){
 			String[] m = new String[listaDePalabras.size()];
 			int count =0;
