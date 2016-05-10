@@ -3,6 +3,7 @@
 package com.redes.proyecto;
 
 import java.awt.BorderLayout;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.GridLayout;
@@ -11,11 +12,17 @@ import java.awt.event.MouseEvent;
 import java.net.Socket;
 import java.net.InetAddress;
 import java.io.IOException;
+import javax.swing.Box;
+import javax.swing.ButtonGroup;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.JRadioButton;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import javax.swing.SwingUtilities;
 import java.util.Formatter;
 import java.util.Scanner;
@@ -23,8 +30,15 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 
 public class ClienteScrabbleJ extends JFrame implements Runnable {
-	private JTextField campoId; // campo de texto para mostrar la marca del jugador
+	   private JLabel etiquetaPalabra; // campo de texto para mostrar los puntos del jugador
+	   private JTextField campoId; // campo de texto para mostrar la marca del jugador
+	   private JTextField campoScore; // campo de texto para mostrar los puntos del jugador
+	   private JTextField campoPalabra; // introduce la palabra del usuario
+       private JLabel etiquetaCadenaAleatoria;
 	   private JTextArea areaPantalla; // objeto JTextArea para mostrar la salida
+	   private JRadioButton horizontalBoton; // boton que determina la posicion horizontal
+	   private JRadioButton verticalBoton; //boton que determina la posicion vertical
+	   private ButtonGroup grupoRadioBotones;
 	   private JPanel panelTablero; // panel para el tablero de scrabble
 	   private JPanel panel2; // panel que contiene el tablero
 	   private Cuadro tablero[][]; // tablero de scrabble
@@ -42,10 +56,30 @@ public class ClienteScrabbleJ extends JFrame implements Runnable {
 	   public ClienteScrabbleJ( String host )
 	   { 
 	      hostScrabble = host; // establece el nombre del servidor
-	      areaPantalla = new JTextArea( 4, 30 ); // establece objeto JTextArea
-	      areaPantalla.setEditable( false );
-	      add( new JScrollPane( areaPantalla ), BorderLayout.SOUTH );
 
+		  //crea un panel principal para determinar las posiciones
+		  Container panelPrincipal = getContentPane();
+		  panelPrincipal.setLayout(new BorderLayout());
+		  
+		  //crea una cajas para meter campos en las posiciones
+		  Box cajaSuperior = Box.createVerticalBox();
+		  Box cajaInferior = Box.createVerticalBox();
+		  Box boxEtiquetaCampo = Box.createHorizontalBox();
+		  Box radioBotones = Box.createHorizontalBox();
+
+		  panelPrincipal.add(cajaSuperior, BorderLayout.NORTH );
+		  panelPrincipal.add(cajaInferior, BorderLayout.SOUTH );
+
+	      campoId = new JTextField(); // establece campo de texto
+	      campoScore = new JTextField();
+	      campoId.setEditable( false );
+	      campoScore.setEditable( false );
+	      //campo que muestra la informacion del usuario
+	      cajaSuperior.add(campoId);
+	      //campo que muestra la puntacion del usuario
+	      cajaSuperior.add(campoScore);
+
+	      /*Tablero*/
 	      panelTablero = new JPanel(); // establece panel para los cuadros en el tablero
 	      panelTablero.setLayout( new GridLayout( 15, 15, 0, 0 ) );
 	      
@@ -65,17 +99,59 @@ public class ClienteScrabbleJ extends JFrame implements Runnable {
 	            panelTablero.add( tablero[ fila ][ columna ] ); // agrega el cuadro       
 	         } // fin de for interior
 	      } // fin de for exterior
-
-	      campoId = new JTextField(); // establece campo de texto
-	      campoId.setEditable( false );
-	      add( campoId, BorderLayout.NORTH );
 	      
 	      panel2 = new JPanel(); // establece el panel que contiene a panelTablero
 	      panel2.add( panelTablero, BorderLayout.CENTER ); // agrega el panel del tablero
-	      add( panel2, BorderLayout.CENTER ); // agrega el panel contenedor
-	     
+	      panelPrincipal.add( panel2, BorderLayout.CENTER ); // agrega el panel contenedor
+	      
+	      //etiqueta que muestra la cadena aleatoria creada por el usuario
+	      etiquetaCadenaAleatoria = new JLabel();
+	      etiquetaCadenaAleatoria.setText("\"Bienvenido!\"");
+	      //le da un tamanio al la fuente para mostrarla mas marcada
+	      etiquetaCadenaAleatoria.setFont (etiquetaCadenaAleatoria.getFont().deriveFont(26.0f));
+	      cajaInferior.add(etiquetaCadenaAleatoria);
 
-	      setSize( 475, 625 ); // establece el tamaño de la ventana
+	      etiquetaPalabra = new JLabel();
+	      etiquetaPalabra.setText("Introduce tu palabra: ");
+	      boxEtiquetaCampo.add(etiquetaPalabra);
+	      
+      
+	      //obtiene la palabra formada por el usuario
+	      campoPalabra = new JTextField(); // crea objeto campoPalabra
+	      campoPalabra.setEditable( true );
+	      campoPalabra.addActionListener(
+	         new ActionListener() 
+	         {
+	            // envia el mensaje al servidor
+	            public void actionPerformed( ActionEvent evento )
+	            {
+	               mostrarMensaje( evento.getActionCommand() );
+	               campoPalabra.setText( "" );
+	            } // fin del método actionPerformed
+	         } // fin de la clase interna anónima
+	      ); // fin de la llamada a addActionListener
+	      
+	      //<-- Crear un dos JRadioButton para establecer la orientacion de la palabra horizontal o vertical
+	      //dentro de un ButtonGroup
+
+	      boxEtiquetaCampo.add( campoPalabra );
+	      cajaInferior.add(boxEtiquetaCampo);
+	      
+	      horizontalBoton = new JRadioButton("horizontal", true);
+	      verticalBoton = new JRadioButton("vertical", false);
+	      grupoRadioBotones = new ButtonGroup();
+	      grupoRadioBotones.add(horizontalBoton);
+	      grupoRadioBotones.add(verticalBoton);
+	      radioBotones.add(horizontalBoton);
+	      radioBotones.add(verticalBoton);
+	      cajaInferior.add(radioBotones);
+	           
+	      areaPantalla = new JTextArea( 4, 40 ); // establece objeto JTextArea
+	      areaPantalla.setEditable( false );
+	      cajaInferior.add( new JScrollPane( areaPantalla ));
+	      
+
+	      setSize( 478, 665 ); // establece el tamaño de la ventana
 	      setVisible( true ); // muestra la ventana
 
 	      iniciarCliente();
@@ -107,7 +183,7 @@ public class ClienteScrabbleJ extends JFrame implements Runnable {
 	   // subproceso de control que permite la actualización continua de areaPantalla
 	   public void run()
 	   {
-	      miMarca = entrada.nextLine(); // obtiene la marca del jugador (X o O)
+	      miMarca = entrada.nextLine(); // obtiene la marca del jugador (Uno o dos)
 
 	      SwingUtilities.invokeLater( 
 	         new Runnable() 
