@@ -24,6 +24,9 @@ import javax.swing.JRadioButton;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.SwingUtilities;
+
+import com.redes.scrabble.ScrabbleJ;
+
 import java.util.Formatter;
 import java.util.Scanner;
 import java.util.concurrent.Executors;
@@ -47,16 +50,21 @@ public class ClienteScrabbleJ extends JFrame implements Runnable {
 	   private Scanner entrada; // entrada del servidor
 	   private Formatter salida; // salida al servidor
 	   private String hostScrabble; // nombre de host para el servidor
-	   private String miMarca; // la marca de este cliente
+	   private String miMarcaCliente; // la marca de este cliente
+	   private ScrabbleJ scrabble; //crea el juego scrabble
 	   private boolean miTurno; // determina de qué cliente es el turno
-	   private final String MARCA_X = "X"; // marca para el primer cliente
-	   private final String MARCA_O = "O"; // marca para el segundo cliente
+	   private final String MARCA_1 = "Uno"; // marca para el primer cliente
+	   private final String MARCA_2 = "Dos"; // marca para el segundo cliente
+	   private String CADENA_1; //almacena la cadena generada por scrabble para Uno
+	   private String CADENA_2; //almacena la cadena generada por scrabble para Dos
 
 	   // establece la interfaz de usuario y el tablero
 	   public ClienteScrabbleJ( String host )
 	   { 
 	      hostScrabble = host; // establece el nombre del servidor
-
+	      scrabble = new ScrabbleJ(); //crea el objeto scrabble
+	      CADENA_1 = "";
+	      CADENA_2 = "";
 		  //crea un panel principal para determinar las posiciones
 		  Container panelPrincipal = getContentPane();
 		  panelPrincipal.setLayout(new BorderLayout());
@@ -94,7 +102,6 @@ public class ClienteScrabbleJ extends JFrame implements Runnable {
 	         {
 	            // crea un cuadro
 	        	//<-- Crear un aleatorio para marcar el tablero Cuadro("-" , #)
-	        	//<-- Cambiar 3 por 15 para determinar la posicion de los cuadros
 	            tablero[ fila ][ columna ] = new Cuadro( " ", fila * 15 + columna );
 	            panelTablero.add( tablero[ fila ][ columna ] ); // agrega el cuadro       
 	         } // fin de for interior
@@ -118,22 +125,31 @@ public class ClienteScrabbleJ extends JFrame implements Runnable {
       
 	      //obtiene la palabra formada por el usuario
 	      campoPalabra = new JTextField(); // crea objeto campoPalabra
-	      campoPalabra.setEditable( true );
+
 	      campoPalabra.addActionListener(
 	         new ActionListener() 
 	         {
 	            // envia el mensaje al servidor
 	            public void actionPerformed( ActionEvent evento )
 	            {
-	               mostrarMensaje( evento.getActionCommand() );
-	               campoPalabra.setText( "" );
+	            	//si es el turno habilita el campo para el envio
+	            	String entrada;
+            		
+	            	mostrarMensaje( "El contenido de la CADENA es: " + "\"" + CADENA_1 + "\"" );
+
+	            		entrada = evento.getActionCommand();	
+
+	            		if(scrabble.validarCadenaYPalabra(CADENA_1, entrada))
+	            		{
+		            		mostrarMensaje( entrada );
+	            		}else{
+	            			mostrarMensaje("La cadena no coincide con la palabra \n");
+	            		}
+	            		campoPalabra.setText( "" );
 	            } // fin del método actionPerformed
 	         } // fin de la clase interna anónima
 	      ); // fin de la llamada a addActionListener
 	      
-	      //<-- Crear un dos JRadioButton para establecer la orientacion de la palabra horizontal o vertical
-	      //dentro de un ButtonGroup
-
 	      boxEtiquetaCampo.add( campoPalabra );
 	      cajaInferior.add(boxEtiquetaCampo);
 	      
@@ -165,6 +181,7 @@ public class ClienteScrabbleJ extends JFrame implements Runnable {
 	         // realiza conexión con el servidor
 	         conexion = new Socket( 
 	            InetAddress.getByName( hostScrabble ), 12345 );
+	         //determina la direccion IP de un host, proporcionando el nombre.
 
 	         // obtiene flujos para entrada y salida
 	         entrada = new Scanner( conexion.getInputStream() );
@@ -183,40 +200,49 @@ public class ClienteScrabbleJ extends JFrame implements Runnable {
 	   // subproceso de control que permite la actualización continua de areaPantalla
 	   public void run()
 	   {
-	      miMarca = entrada.nextLine(); // obtiene la marca del jugador (Uno o dos)
-
+	      miMarcaCliente = entrada.nextLine(); // obtiene la marca del jugador (Uno o Dos)
+     
 	      SwingUtilities.invokeLater( 
 	         new Runnable() 
 	         {         
 	            public void run()
 	            {
 	               // muestra la marca del jugador
-	               campoId.setText( "Usted es el jugador \"" + miMarca + "\"" );
+	               campoId.setText( "Usted es el jugador \"" + miMarcaCliente + "\"" );
 	            } // fin del método run
 	         } // fin de la clase interna anónima
 	      ); // fin de la llamada a SwingUtilities.invokeLater
-	         
-	      miTurno = ( miMarca.equals( MARCA_X ) ); // determina si es turno del cliente
-
+	      miTurno = ( miMarcaCliente.equals( MARCA_1 ) ); // determina si es turno del cliente
+	      
+	      if(!miTurno){
+			  //mostrarMensaje( "Listo comunicacion lista.\n" );
+	    	  CADENA_2 = scrabble.generarLetrasAleatorias();
+	    	  etiquetaCadenaAleatoria.setText(CADENA_2);
+	      }
 	      // recibe los mensajes que se envían al cliente y los imprime en pantalla
 	      while ( true )
 	      {
 	         if ( entrada.hasNextLine() )
-	            procesarMensaje( entrada.nextLine() );
+	            procesarMensaje( entrada.nextLine() ); 
 	      } // fin de while
+	      
 	   } // fin del método run
 
 	   // procesa los mensajes recibidos por el cliente
 	   private void procesarMensaje( String mensaje )
 	   {
 	      // ocurrió un movimiento válido
-	      if ( mensaje.equals( "Movimiento valido." ) ) 
+		  if (mensaje.equals("PLAY")){
+	    	  CADENA_1 = scrabble.generarLetrasAleatorias();
+	    	  etiquetaCadenaAleatoria.setText(CADENA_1);
+		  }
+		  else if ( mensaje.equals( "Movimiento valido." ) ) 
 	      {
 	         mostrarMensaje( "Movimiento valido, por favor espere.\n" );
-	         establecerMarca( cuadroActual, miMarca ); // establece marca en el cuadro
+	         establecerMarca( cuadroActual, miMarcaCliente ); // establece marca en el cuadro
 	      } // fin de if
 	      else if ( mensaje.equals( "Movimiento invalido, intente de nuevo" ) ) 
-	      {
+	      {	 //porque es necesario el salto de linea? -.-
 	         mostrarMensaje( mensaje + "\n" ); // muestra el movimiento inválido
 	         miTurno = true; // sigue siendo turno de este cliente
 	      } // fin de else if
@@ -227,13 +253,15 @@ public class ClienteScrabbleJ extends JFrame implements Runnable {
 	         int fila = ubicacion / 15; // calcula la fila
 	         int columna = ubicacion % 15; // calcula la columna
 
+	         //<-- miMarcaCliente.equals( MARCA_1 ) ? MARCA_O : MARCA_X ) );
 	         establecerMarca(  tablero[ fila ][ columna ], 
-	            ( miMarca.equals( MARCA_X ) ? MARCA_O : MARCA_X ) ); // marca el movimiento                
+	            ( miMarcaCliente.equals( MARCA_1 ) ? MARCA_2 : MARCA_1 ) ); // marca el movimiento                
 	         mostrarMensaje( "El oponente hizo un movimiento. \nAhora es su turno.\n" );
 	         miTurno = true; // ahora es turno de este cliente
 	      } // fin de else if
-	      else
-	         mostrarMensaje( mensaje + "\n" ); // muestra el mensaje
+	      else {
+	    	  mostrarMensaje( mensaje + "\n" ); // muestra el mensaje
+	      }
 	   } // fin del método procesarMensaje
 
 	   // manipula el objeto areaSalida en el subproceso despachador de eventos

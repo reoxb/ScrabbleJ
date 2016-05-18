@@ -25,7 +25,7 @@ public class ServidorScrabbleJ extends JFrame{
 	   private int jugadorActual; // lleva la cuenta del jugador que sigue en turno
 	   private final static int JUGADOR_1 = 0; // constante para el primer jugador
 	   private final static int JUGADOR_2 = 1; // constante para el segundo jugador
-	   private final static String[] MARCAS = { "X", "O" }; // arreglo de marcas
+	   private final static String[] MARCAS = { "Uno", "Dos" }; // arreglo de marcas
 	   private ExecutorService ejecutarJuego; // ejecuta a los jugadores
 	   private Lock bloqueoJuego; // para bloquear el juego y estar sincronizado
 	   private Condition otroJugadorConectado; // para esperar al otro jugador
@@ -53,6 +53,7 @@ public class ServidorScrabbleJ extends JFrame{
 	 
 	      try
 	      {
+	    	 //establece el puerto y el numero maximo de conexiones permitidas
 	         servidor = new ServerSocket(12345, 2); // establece objeto ServerSocket
 	      } // fin de try
 	      catch ( IOException excepcionES ) 
@@ -89,16 +90,16 @@ public class ServidorScrabbleJ extends JFrame{
 	         } // fin de catch
 	      } // fin de for
 
-	      bloqueoJuego.lock(); // bloquea el juego para avisar al subproceso del jugador X
+	      bloqueoJuego.lock(); // bloquea el juego para avisar al subproceso del jugador Uno
 
 	      try
 	      {
-	         jugadores[JUGADOR_1].establecerSuspendido(false); // continúa el jugador X
-	         otroJugadorConectado.signal(); // despierta el subproceso del jugador X
+	         jugadores[JUGADOR_1].establecerSuspendido(false); // continúa el jugador Uno
+	         otroJugadorConectado.signal(); // despierta el subproceso del jugador Uno
 	      } // fin de try
 	      finally
 	      {
-	         bloqueoJuego.unlock(); // desbloquea el juego después de avisar al jugador X
+	         bloqueoJuego.unlock(); // desbloquea el juego después de avisar al jugador Uno
 	      } // fin de finally
 	   } // fin del método execute
 	   
@@ -221,21 +222,21 @@ public class ServidorScrabbleJ extends JFrame{
 	      // controla la informacion que se envia al cliente y la que se recibe
 	      public void run()
 	      {
-	         // envía al cliente su marca (X o Y), procesa los mensajes del cliente
+	         // envía al cliente su marca (Uno o Dos), procesa los mensajes del cliente
 	         try 
 	         {
 	            mostrarMensaje( "Jugador " + marca + " conectado\n" );
 	            /* pasa al cliente el caracter que se colocara en el tablero cuando se
-	             * haga un moviento anterior O o X 
+	             * haga un moviento anterior O o Uno 
 	             * <----- recibir solo la marca en el cliente, modificar en el cliente mostrar marca 
 	             */
 	            salida.format("%s\n", marca); // envía la marca del jugador
 	            salida.flush(); // vacía la salida y la forza
 
-	            // si es el jugador X, espera a que llegue el otro jugador
+	            // si es el jugador Uno
 	            if ( numeroJugador == JUGADOR_1 ) 
 	            {
-	               salida.format( "%s\n%s", "Jugador X conectado",
+	               salida.format( "%s\n%s", "Jugador Uno conectado",
 	                  "Esperando al otro jugador\n" );
 	               salida.flush(); // vacía la salida
 
@@ -246,10 +247,10 @@ public class ServidorScrabbleJ extends JFrame{
 	                  while( suspendido )
 	                  {
 		                 //await causa que el hilo actual espere hasta una senial o interrupcion.
-	                     otroJugadorConectado.await(); // espera al jugador Y
-	                     /* suspende el subproceso del jugador X cuando empieza a ejecutarse, 
-	                      * ya que el jugador X podrá realizar movimientos sólo hasta después 
-	                      * de que el jugador Y se conecte */
+	                     otroJugadorConectado.await(); // espera al jugador Dos
+	                     /* suspende el subproceso del jugador Uno cuando empieza a ejecutarse, 
+	                      * ya que el jugador Uno podrá realizar movimientos sólo hasta después 
+	                      * de que el jugador Dos se conecte */
 	                  } // fin de while
 	               } // fin de try 
 	               catch ( InterruptedException excepcion ) 
@@ -260,10 +261,15 @@ public class ServidorScrabbleJ extends JFrame{
 	               {
 	                  bloqueoJuego.unlock(); // desbloquea el juego después del segundo jugador
 	               } // fin de finally
-
+	               
 	               // envía un mensaje que indica que el otro jugador se conectó
-	               salida.format( "El otro jugador se conecto. \nAhora es su turno.\n" );
+	               salida.format( "El otro jugador se conecto.\n" );
+	               salida.format( "Ahora es su turno.\n" );
+	               //<-- buscar una explicacion en este punto es crucial
+	               salida.format( "PLAY\n" );
+	               //es necesario el salto de linea para que se pueda leer y procesar el mensaje
 	               salida.flush(); // vacía la salida
+
 	            } // fin de if
 	            else
 	            {
@@ -276,7 +282,7 @@ public class ServidorScrabbleJ extends JFrame{
 	            while ( !seTerminoJuego() ) 
 	            {
 	               int ubicacion = 0; // inicializa la ubicación del movimiento
-
+	               
 	               /* En cada iteración de este ciclo se lee un entero que representa
 	                * la ubicación en donde el cliente desea colocar una marca */
 	               if ( entrada.hasNext() )

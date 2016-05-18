@@ -74,8 +74,6 @@ public class ScrabbleJ {
     	return S;
     }
     
-    //-------------------------------------------------------------------------
-
     public static final class puntuarLetra {
 
         private int puntos;
@@ -99,5 +97,32 @@ public class ScrabbleJ {
             return letras.contains(caracter);
         }
     }
+
+	public boolean validarCadenaYPalabra(String cadena, String entrada) {
+        List<Character> caracteres = new ArrayList<Character>(cadena.length());
+        Boolean contiene = false;
+        cadena.toLowerCase();
+                
+        for (char caracter : cadena.toCharArray()) {
+        	caracteres.add(caracter);
+        }
+        
+        System.out.println("La cadena entrada: " + entrada);
+   
+		for (char A : entrada.toCharArray()) {
+			
+			contiene = caracteres.contains(A);
+	        System.out.println("La palabra entrada: " + entrada + "contiene: " + contiene + A);
+
+			if(contiene)
+			{
+		        System.out.println("La palabra entrada: " + entrada + "contiene: " + A);
+				continue;
+			}else{
+				return false;		
+			}
+	    }//fin del for	
+		return true;		
+	}
 
 }
