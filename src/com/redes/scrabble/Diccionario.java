@@ -52,6 +52,7 @@ public class Diccionario{
 		}//fin del metodo
 
 		public boolean existePalabra(String palabra){
+			palabra = palabra.toUpperCase();
 			for(int i=0; i<listaDePalabras.size(); i++){
 				String s = listaDePalabras.get(i);
 				if(palabra.compareTo(s)==0){

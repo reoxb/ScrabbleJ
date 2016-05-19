@@ -6,6 +6,7 @@ import java.net.Socket;
 import java.io.IOException;
 import java.util.Formatter;
 import java.util.Scanner;
+import java.util.StringTokenizer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.locks.Lock;
@@ -18,7 +19,7 @@ import javax.swing.SwingUtilities;
 
 public class ServidorScrabbleJ extends JFrame{
 
-	   private String[] tablero = new String[225]; // tablero de scrabble
+	   private String[][] tablero = new String[15][15]; // tablero de scrabble
 	   private JTextArea areaSalida; // para imprimir los movimientos en pantalla
 	   private Jugador[] jugadores; // arreglo de objetos Jugador
 	   private ServerSocket servidor; // socket servidor para conectarse con los clientes
@@ -46,8 +47,10 @@ public class ServidorScrabbleJ extends JFrame{
 	      // variable de condición para el turno del otro jugador
 	      turnoOtroJugador = bloqueoJuego.newCondition();      
 
-	      for ( int i = 0; i < 225; i++ )
-	         tablero[ i ] = new String( "" ); // crea tablero de scrabble
+	      for ( int i = 0; i < 15; i++ )
+	    	  for (int j = 0; j < 15; j++) {
+	 	         tablero[ i ][ j ] = new String( "" ); // crea tablero de scrabble
+			}
 	      jugadores = new Jugador[2]; // crea arreglo de jugadores
 	      jugadorActual = JUGADOR_1; // establece el primer jugador como el jugador actual
 	 
@@ -119,7 +122,7 @@ public class ServidorScrabbleJ extends JFrame{
 	   } // fin del método mostrarMensaje
 
 	   // determina si el movimiento es válido
-	   public boolean validarYMover( int ubicacion, int jugador )
+	   public boolean validarYMover( int ubicacion, String palabra, char orientacion, int jugador )
 	   {
 	      // mientras no sea el jugador actual, debe esperar su turno
 	      while ( jugador != jugadorActual ) 
@@ -141,13 +144,36 @@ public class ServidorScrabbleJ extends JFrame{
 	      } // fin de while
 
 	      // si la ubicación no está ocupada, realiza el movimiento
-	      if ( !estaOcupada( ubicacion ) )
+	      if ( !estaOcupada( ubicacion, palabra, orientacion ) )
 	      {
-	         tablero[ubicacion] = MARCAS[jugadorActual]; // establece el movimiento en el tablero
+	    	 /* El servidor crea su propio mapa del tablero, con esto puede saber las posiciones que hay disponibles
+	    	  * y si es que alguna de ellas, ha sido ocupada, es avisado de los movientos y los mapea, para darle 
+	    	  * seguimiento al juego. 
+	    	  */
+	    	  
+	    	  int fila = ubicacion / 15; // calcula la fila
+		      int columna = ubicacion % 15; // calcula la columna
+			  char marca;
+			  
+			  if(orientacion == 'H'){
+				  // cicla por las columnas para comparar la casilla
+				  for (int j = 0; j < palabra.length(); j++) {
+					  // en cada casilla compara la palabra completa
+					 marca = palabra.charAt(j);  
+					 tablero[ fila ][columna + j] = String.valueOf(marca);
+				  }//fin del for
+			  }else{ //si la orientacion es vertical
+				  for (int i = 0; i < palabra.length(); i++) {
+					  // en cada casilla compara la palabra completa
+					 marca = palabra.charAt(i);  
+					 tablero[ fila + i][columna] = String.valueOf(marca); 
+				  }//fin del for
+			  }//fin del else vertical
+	         
 	         jugadorActual = ( jugadorActual + 1 ) % 2; // cambia el jugador
 
 	         // deja que el nuevo jugador sepa que se realizó un movimiento
-	         jugadores[ jugadorActual ].otroJugadorMovio( ubicacion );
+	         jugadores[ jugadorActual ].otroJugadorMovio( ubicacion, palabra, orientacion );
 
 	         bloqueoJuego.lock(); // bloquea el juego para indicar al otro jugador que realice su movimiento
 
@@ -167,13 +193,40 @@ public class ServidorScrabbleJ extends JFrame{
 	   } // fin del método validarYMover
 
 	   // determina si la ubicación está ocupada
-	   public boolean estaOcupada( int ubicacion )
+	   public boolean estaOcupada( int ubicacion, String palabra, char orientacion )
 	   {
-	      if ( tablero[ ubicacion ].equals( MARCAS[ JUGADOR_1 ] ) || 
-	         tablero [ ubicacion ].equals( MARCAS[ JUGADOR_2 ] ) )
-	         return true; // la ubicación está ocupada
-	      else
-	         return false; // la ubicación no está ocuapada
+		  int fila = ubicacion / 15; // calcula la fila
+	      int columna = ubicacion % 15; // calcula la columna
+		  char marca;
+		  //valida que las palabras esten dentro del cuadro
+		  if(((columna + palabra.length()) > 15) || ((fila + palabra.length()) > 15))
+			  return true;
+		  
+		  if(orientacion == 'H'){
+			  // cicla por las columnas para comparar la casilla
+			  for (int j = 0; j < palabra.length(); j++) {
+				  // en cada casilla compara la palabra completa
+				 marca = palabra.charAt(j);  
+				  if ( (tablero[ fila ][columna + j].equals("")) || (tablero[fila][columna + j].equals(marca))){
+				    	  continue;
+				      } else { //si la casilla esta ocupada
+					         return true; // la ubicación está ocupada
+				      }//fin del if else
+			}//fin del for horizontal para columnas
+		  }else{ //si la orientacion es vertical
+			  
+			  for (int i = 0; i < palabra.length(); i++) {
+				  // en cada casilla compara la palabra completa
+				 marca = palabra.charAt(i);  
+				  if ( (tablero[ fila + i][columna].equals("")) || (tablero[fila][columna + i].equals(marca))){
+				    	  continue;
+				      } else { //si la casilla esta ocupada
+					         return true; // la ubicación está ocupada
+				      }//fin del if else
+			}//fin del for horizontal para columnas  
+		  }//fin del else vertical
+		  return false; // la ubicación no está ocuapada
+
 	   } // fin del método estaOcupada
 
 	   // coloca código en este método para determinar si terminó el juego 
@@ -189,8 +242,12 @@ public class ServidorScrabbleJ extends JFrame{
 	      private Scanner entrada; // entrada del cliente
 	      private Formatter salida; // salida al cliente
 	      private int numeroJugador; // rastrea cuál jugador es el actual
-	      private String marca; // marca para este jugador
 	      private boolean suspendido = true; // indica si el subproceso está suspendido
+	      private String palabra; //recibe la palabra dada por el cliente
+	      private String marca; // marca para este jugador
+	      private char orientacion; //establece la orientacion de la palabra
+	      private String in;
+	      private StringTokenizer separador; //captura la linea con formato enviada desde el cliente
 
 	      // establece el subproceso Jugador
 	      public Jugador( Socket socket, int numero )
@@ -212,10 +269,10 @@ public class ServidorScrabbleJ extends JFrame{
 	      } // fin del constructor de Jugador
 
 	      // envía mensaje que indica que el otro jugador hizo un movimiento
-	      public void otroJugadorMovio(int ubicacion)
+	      public void otroJugadorMovio(int ubicacion, String palabra, char orientacion )
 	      {
 	         salida.format( "El oponente realizo movimiento\n");
-	         salida.format( "%d\n", ubicacion ); // envía la ubicación del movimiento
+	         salida.format( "%d-%s-%c\n", ubicacion, palabra, orientacion ); // envía la ubicación, palabra y orientacion del movimiento
 	         salida.flush(); // vacía la salida
 	      } // fin del método otroJugadorMovio
 
@@ -285,18 +342,19 @@ public class ServidorScrabbleJ extends JFrame{
 	               
 	               /* En cada iteración de este ciclo se lee un entero que representa
 	                * la ubicación en donde el cliente desea colocar una marca */
-	               if ( entrada.hasNext() )
-	                  ubicacion = entrada.nextInt(); // obtiene la ubicación del movimiento
-
-	               // comprueba si el movimiento es válido
-	               /* <-- Usar para comprobar palabra leida desde cliente
-	                * validarPalabra, cambiar la variable ubicacion por palabra 
-	                * se puede usar la variable ubucacion con un c
-	                */
-	               // permite que se mueva un jugador en un momento dado
-	               if ( validarYMover( ubicacion, numeroJugador ) ) 
+	               if ( entrada.hasNext() ){
+	                  //ubicacion = entrada.nextInt(); // obtiene la ubicación del movimiento
+	                  in = entrada.nextLine(); // obtiene la ubicación del movimiento
+	  	         	  separador = new StringTokenizer(in, "-"); //indica como recibir el mensaje
+	               	  ubicacion = Integer.parseInt(separador.nextToken()); //obtiene la ubicacion
+	               	  palabra = separador.nextToken(); //obtiene la palabra
+	               	  orientacion = separador.nextToken().charAt(0); //obtiene la orientacion
+	               }
+	               // comprueba si el movimiento es válido	                  
+	               if ( validarYMover( ubicacion, palabra, orientacion, numeroJugador ) ) 
 	               {
-	                  mostrarMensaje( "\nubicacion: " + ubicacion );
+	                  mostrarMensaje( "\nubicacion: " + ubicacion  +  " palabra: " + palabra );
+	                  //mostrarMensaje( "\norientacion: " + orientacion );
 	                  salida.format( "Movimiento valido.\n" ); // notifica al cliente
 	                  salida.flush(); // vacía la salida
 	               } // fin de if

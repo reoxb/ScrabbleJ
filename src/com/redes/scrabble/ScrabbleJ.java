@@ -27,6 +27,7 @@ public class ScrabbleJ {
 
     //recibe una palabra y la convierte en un arreglo de cadenas
     public int obtenerPuntosPorPalabra(String palabra) {
+    	palabra = palabra.toUpperCase();
         int puntuacionFinal = 0;
         for (char caracter : palabra.toCharArray()) {
         	//cadena por cadena es enviada para obtener su puntuacion
@@ -98,31 +99,29 @@ public class ScrabbleJ {
         }
     }
 
-	public boolean validarCadenaYPalabra(String cadena, String entrada) {
-        List<Character> caracteres = new ArrayList<Character>(cadena.length());
-        Boolean contiene = false;
-        cadena.toLowerCase();
-                
-        for (char caracter : cadena.toCharArray()) {
-        	caracteres.add(caracter);
-        }
-        
-        System.out.println("La cadena entrada: " + entrada);
-   
-		for (char A : entrada.toCharArray()) {
-			
-			contiene = caracteres.contains(A);
-	        System.out.println("La palabra entrada: " + entrada + "contiene: " + contiene + A);
-
-			if(contiene)
-			{
-		        System.out.println("La palabra entrada: " + entrada + "contiene: " + A);
-				continue;
-			}else{
-				return false;		
+	public boolean validarCadenaYPalabra(String cadena, String palabra) {
+		//contiene valida que el caracter de la palabra este en los caracteres de la cadena
+		Boolean contiene = false;
+		//lo manejamos todo en mayusculas
+		palabra = palabra.toUpperCase();
+	    
+		//compara los elementos de la palabra con los elementos de la cadena
+		for (char A : palabra.toCharArray()) {
+			//inicia contiene a falso cada ciclo
+			contiene = false;
+			for (char B : cadena.toCharArray()) {
+				//System.out.println("La palabra: " + palabra + " caracter: " + A + " de " + cadena + " en caracter: " + B);
+				if(A == B) {
+					//System.out.println("ES IGUAL");
+					contiene = true;
+					break;
+				}
+			}//fin del primer for
+			//si contiene es verdadero salta al siguiente ciclo
+	        if(!contiene){
+				return false;
 			}
-	    }//fin del for	
-		return true;		
-	}
-
-}
+		}// fin del segundo for
+		return contiene;
+	}//fin del metodo
+}//fin de la clase
